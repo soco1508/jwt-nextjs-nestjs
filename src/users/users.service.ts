@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadGatewayException,
+  BadRequestException,
+  Injectable,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { hashPasswordHelper } from '@/helpers/utils';
@@ -6,6 +10,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { User } from './schemas/user.schema';
 import { Model } from 'mongoose';
 import aqp from 'api-query-params';
+import mongoose from 'mongoose';
 
 @Injectable()
 export class UsersService {
@@ -68,11 +73,27 @@ export class UsersService {
     return `This action returns a #${id} user`;
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async findByEmail(email: string) {
+    return await this.userModel.findOne({ email });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async update(_id: string, updateUserDto: UpdateUserDto) {
+    const { name, phone, address, image } = updateUserDto;
+    if (mongoose.isValidObjectId(_id)) {
+      return await this.userModel.updateOne(
+        { _id: _id },
+        { name, phone, address, image },
+      );
+    } else {
+      throw new BadGatewayException('Bad request');
+    }
+  }
+
+  async remove(_id: string) {
+    if (mongoose.isValidObjectId(_id)) {
+      return await this.userModel.deleteOne({ _id: _id });
+    } else {
+      throw new BadGatewayException('Bad request');
+    }
   }
 }
